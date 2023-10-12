@@ -21,4 +21,6 @@ public interface ExameRepository extends DynamoDBCrudRepository<Exame, String> {
     List<Exame> findAllByDataRegistroStartsWith(String data);
 
     Optional<Exame> findExameByIdExame(String idExame);
+
+    List<Exame> getDistinctByResultado();
 }

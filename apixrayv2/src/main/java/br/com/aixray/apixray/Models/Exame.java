@@ -6,6 +6,7 @@ import com.amazonaws.services.dynamodbv2.datamodeling.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @DynamoDBTable(tableName = "exames")
 public class Exame {
@@ -125,5 +126,16 @@ public class Exame {
             this.feedbacks = new ArrayList<Feedback>();
         }
         this.feedbacks.add(feedback);
+    }
+
+    public int countRightFeedbacks() {
+        try {
+            return (int) feedbacks.stream()
+                    .filter(Objects::nonNull)
+                    .filter(feedback -> feedback.getRetornoMedico().equals(feedback.getRetornoModelo()))
+                    .count();
+        }catch (NullPointerException exception) {
+            return 0;
+        }
     }
 }

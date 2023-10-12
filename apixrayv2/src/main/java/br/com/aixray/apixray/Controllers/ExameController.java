@@ -114,4 +114,51 @@ public class ExameController {
         exameRepository.save(exame);
         return ResponseEntity.ok(exame);
     }
+
+    @GetMapping("/countFeedbacks")
+    public ResponseEntity getFeedbackLast12Months() {
+        HashMap<String, Object> retornoHashmap = new HashMap<>();
+        Date data = new Date();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM");
+        for (int i = 0; i < 12; i++) {
+            String dataFormatada = sdf.format(data);
+            List<Exame> examesMes = exameRepository.findAllByDataRegistroStartsWith(sdf.format(data));
+
+            int feedbacks = examesMes.stream().map(Exame::getFeedbacks)
+                                            .filter(Objects::nonNull)
+                                            .mapToInt(List::size)
+                                            .sum();
+            retornoHashmap.put(dataFormatada, feedbacks);
+        }
+        return ResponseEntity.ok(retornoHashmap);
+    }
+
+    @GetMapping("/countRightFeedbacks")
+    public ResponseEntity getRightFeedbackLast12Months() {
+        HashMap<String, Object> retornoHashmap = new HashMap<>();
+        Date data = new Date();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM");
+        for (int i = 0; i < 12; i++) {
+            String dataFormatada = sdf.format(data);
+            List<Exame> examesMes = exameRepository.findAllByDataRegistroStartsWith(sdf.format(data));
+
+            int rightFeedbacks = examesMes.stream()
+                    .filter(Objects::nonNull)
+                    .mapToInt(Exame::countRightFeedbacks).sum();
+
+            retornoHashmap.put(dataFormatada, rightFeedbacks);
+        }
+        return ResponseEntity.ok(retornoHashmap);
+    }
+
+    @GetMapping("/countDoenca")
+    public ResponseEntity getCountDoenca() {
+        List<String> doencas = new ArrayList<String>();
+        List<Exame> exames = exameRepository.getDistinctByResultado();
+//                .stream()
+//                .map(exame -> exame.getResultado())
+//                .forEach(s -> doencas.add(s));
+
+        return ResponseEntity.ok(exames);
+    }
 }
