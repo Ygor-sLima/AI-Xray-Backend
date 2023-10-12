@@ -1,0 +1,59 @@
+version: '3.9'
+
+services:
+
+  mysql-kc:
+    image: mysql:latest
+    ports:
+      - 3366:3306
+    restart: unless-stopped
+    environment:
+      # The user, password and database that Keycloak
+      # is going to create and use
+      MYSQL_USER: xray_admin
+      MYSQL_PASSWORD: senhafoda
+      MYSQL_DATABASE: xraydb
+      # Self-Explanatory
+      MYSQL_ROOT_PASSWORD: admin
+    volumes:
+      - C:\Users\Ygor\Desktop\apixray2.0\database:/var/lib/mysql
+    networks:
+      - keycloak-and-mysql-network
+
+  xray-dynamo:
+    image: amazon/dynamodb-local
+    hostname: dynamolocal
+    command: "-jar DynamoDBLocal.jar -sharedDb -dbPath /data"
+    volumes:
+      - C:\Users\Ygor\Desktop\apixray2.0\dynamodb-data:/data
+    ports: 
+      - "8000:8000"
+    expose:
+      - "8000"
+
+  keycloak-w:
+    image: jboss/keycloak
+    ports:
+      - 8181:8080
+    restart: unless-stopped
+    environment:
+      # User and password for the Administration Console
+      KEYCLOAK_USER: adminai
+      KEYCLOAK_PASSWORD: senhafoda
+      DB_VENDOR: mysql
+      DB_ADDR: mysql-kc
+      DB_PORT: 3306
+      # Same values as the mysql-kc service
+      DB_USER: xray_admin
+      DB_PASSWORD: senhafoda
+      DB_DATABASE: xraydb
+    depends_on:
+      - mysql-kc
+    networks:
+      - keycloak-and-mysql-network
+
+networks:
+  keycloak-and-mysql-network:
+
+volumes:
+  keycloak-and-mysql-volume:
