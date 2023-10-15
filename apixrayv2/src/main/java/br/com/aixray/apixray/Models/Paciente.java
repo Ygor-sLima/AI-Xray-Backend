@@ -82,4 +82,19 @@ public class Paciente {
                 ", generoPaciente='" + generoPaciente + '\'' +
                 '}';
     }
+
+    public String faixaEtaria() {
+        if (idadePaciente >= 0 && idadePaciente <= 12) {
+            return "Crianças (0 a 12)";
+        } else if (idadePaciente >= 13 && idadePaciente <= 18) {
+            return "Adolescentes (13 a 18)";
+        } else if (idadePaciente >= 19 && idadePaciente <= 35) {
+            return "Adultos Jovens (19 a 35)";
+        } else if (idadePaciente >= 36 && idadePaciente <= 60) {
+            return "Adultos de Meia-Idade (36 a 60)";
+        } else {
+            return "Idosos (Acima de 60)";
+        }
+    }
+
 }

@@ -5,6 +5,7 @@ import br.com.aixray.apixray.Utils.FeedbackListConverter;
 import com.amazonaws.services.dynamodbv2.datamodeling.*;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
@@ -137,5 +138,10 @@ public class Exame {
         }catch (NullPointerException exception) {
             return 0;
         }
+    }
+
+    public List<String> splitResultado() {
+        System.out.println(resultado);
+        return Arrays.stream(resultado.split("\\|")).toList();
     }
 }

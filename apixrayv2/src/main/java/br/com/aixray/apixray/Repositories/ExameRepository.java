@@ -18,9 +18,12 @@ import java.util.Optional;
 public interface ExameRepository extends DynamoDBCrudRepository<Exame, String> {
     Optional<Integer> countAllByDataRegistroStartsWith(String data);
 
+    List<Exame> findAllByFeedbacksNotNull();
+
     List<Exame> findAllByDataRegistroStartsWith(String data);
 
     Optional<Exame> findExameByIdExame(String idExame);
 
     List<Exame> getDistinctByResultado();
+
 }

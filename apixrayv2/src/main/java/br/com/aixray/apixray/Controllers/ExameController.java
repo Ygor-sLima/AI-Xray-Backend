@@ -91,7 +91,7 @@ public class ExameController {
         retornoHashmap.put("Feminino",
                 examesMes
                         .stream()
-                        .filter(exame -> exame.getPaciente().getGeneroPaciente().equals("M"))
+                        .filter(exame -> exame.getPaciente().getGeneroPaciente().equals("F"))
                         .count());
         return ResponseEntity.ok(retornoHashmap);
     }
@@ -135,6 +135,7 @@ public class ExameController {
 
     @GetMapping("/countRightFeedbacks")
     public ResponseEntity getRightFeedbackLast12Months() {
+        //TODO só puxar do banco quando feedback não nulo
         HashMap<String, Object> retornoHashmap = new HashMap<>();
         Date data = new Date();
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM");
@@ -160,5 +161,61 @@ public class ExameController {
 //                .forEach(s -> doencas.add(s));
 
         return ResponseEntity.ok(exames);
+    }
+
+    @GetMapping("/countAllExames")
+    public ResponseEntity getCountAllExames(){
+        return ResponseEntity.ok(exameRepository.count());
+    }
+
+    @GetMapping("/countAllFeedbacks")
+    public ResponseEntity getCountAllFeedbacks(){
+        List<Exame> examesMes = exameRepository.findAllByFeedbacksNotNull();
+
+        int feedbacks = examesMes.stream().map(Exame::getFeedbacks)
+                .mapToInt(List::size)
+                .sum();
+        return ResponseEntity.ok(feedbacks);
+    }
+
+    @GetMapping("/countAllRightFeedbacks")
+    public ResponseEntity getCountAllRightFeedbacks(){
+        List<Exame> examesMes = exameRepository.findAllByFeedbacksNotNull();
+
+        int feedbacks = examesMes.stream()
+                .mapToInt(Exame::countRightFeedbacks)
+                .sum();
+        return ResponseEntity.ok(feedbacks);
+    }
+
+    @GetMapping("/countDoencas")
+    public ResponseEntity getContagemPorDoenca() {
+        Iterable<Exame> exames = exameRepository.findAll();
+        HashMap<String, Integer> retornoHashmap = new HashMap<>();
+        exames.forEach(exame -> {
+            exame.splitResultado().forEach(doenca -> {
+                if(retornoHashmap.containsKey(doenca)) {
+                    retornoHashmap.replace(doenca, retornoHashmap.get(doenca)+1);
+                } else {
+                    retornoHashmap.put(doenca, 1);
+                }
+            });
+        });
+        return ResponseEntity.ok(retornoHashmap);
+    }
+
+    @GetMapping("/countFaixaEtaria")
+    public ResponseEntity getCountFaixaEtaria() {
+        Iterable<Exame> exames = exameRepository.findAll();
+        HashMap<String, Integer> retornoHashmap = new HashMap<>();
+        exames.forEach(exame -> {
+            String faixaPaciente = exame.getPaciente().faixaEtaria();
+            if(retornoHashmap.containsKey(faixaPaciente)) {
+                retornoHashmap.replace(faixaPaciente, retornoHashmap.get(faixaPaciente)+1);
+            } else {
+                retornoHashmap.put(faixaPaciente, 1);
+            }
+        });
+        return ResponseEntity.ok(retornoHashmap);
     }
 }
