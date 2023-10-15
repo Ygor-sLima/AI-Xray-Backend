@@ -35,6 +35,7 @@ public class WebSecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/test/admin", "/test/admin/**").hasRole(ADMIN)
                 .requestMatchers(HttpMethod.POST, "/exame").hasRole(ADMIN)
                 .requestMatchers(HttpMethod.GET, "/exame").hasRole(ADMIN)
+                .requestMatchers(HttpMethod.GET, "/imagem").permitAll()
                 .requestMatchers(HttpMethod.GET, "/test/user").hasAnyRole(USER)
                 .anyRequest().permitAll();
         http.oauth2Login();
