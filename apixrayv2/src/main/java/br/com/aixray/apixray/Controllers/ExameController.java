@@ -50,16 +50,23 @@ public class ExameController {
 
         Exame exame = new Exame();
         exame.setIdExame(UUID.randomUUID().toString());
-        //exame.setPaciente(detalhesPaciente);
+        exame.setPaciente(paciente);
         exame.setResultado("");
-        //exame.setImagem(detalhesImagem);
+        exame.setImagem(imagem);
+
+        Date data = new Date();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd");
+        exame.setTimestampInclusao(data.getTime());
+        exame.setDataRegistro(sdf.format(data));
+
         if(xray.isPresent()) {
             MultipartFile imagemXrayUpload = xray.get();
             String filename = imagemXrayUpload.getOriginalFilename();
             String name = new Date().getTime()+"."+filename.substring(filename.lastIndexOf(".")+1);
-            s3Services.uploadFile(name,imagemXrayUpload);
+            s3Services.uploadFile("images_exame/"+name,imagemXrayUpload);
             imagem.setPathImagem(name);
-            return ResponseEntity.ok("Imagem salvada");
+            exameRepository.save(exame);
+            return ResponseEntity.ok(exame);
         }
 
         return ResponseEntity.ok("Imagem não salvada");
@@ -68,11 +75,15 @@ public class ExameController {
     @GetMapping("/countExameAno")
     public ResponseEntity getCountLast12Months() {
         HashMap<String, Object> retornoHashmap = new HashMap<>();
-        Date data = new Date();
+
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM");
+        Calendar calendar = Calendar.getInstance();
+
         for (int i = 0; i < 12; i++) {
+            Date data = calendar.getTime();
             String dataFormatada = sdf.format(data);
             retornoHashmap.put(dataFormatada, exameRepository.countAllByDataRegistroStartsWith(dataFormatada));
+            calendar.add(Calendar.MONTH, -1);
         }
         return ResponseEntity.ok(retornoHashmap);
     }
@@ -80,9 +91,7 @@ public class ExameController {
     @GetMapping("/countGenero")
     public ResponseEntity getCountByGender() {
         HashMap<String, Object> retornoHashmap = new HashMap<>();
-        Date data = new Date();
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM");
-        List<Exame> examesMes = exameRepository.findAllByDataRegistroStartsWith(sdf.format(data));
+        List<Exame> examesMes = exameRepository.findAllByDataRegistroStartsWith("2023/");
         retornoHashmap.put("Masculino",
                 examesMes
                         .stream()
@@ -118,17 +127,20 @@ public class ExameController {
     @GetMapping("/countFeedbacks")
     public ResponseEntity getFeedbackLast12Months() {
         HashMap<String, Object> retornoHashmap = new HashMap<>();
-        Date data = new Date();
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM");
+        Calendar calendar = Calendar.getInstance();
+
         for (int i = 0; i < 12; i++) {
+            Date data = calendar.getTime();
             String dataFormatada = sdf.format(data);
-            List<Exame> examesMes = exameRepository.findAllByDataRegistroStartsWith(sdf.format(data));
+            List<Exame> examesMes = exameRepository.findAllByDataRegistroStartsWith(dataFormatada);
 
             int feedbacks = examesMes.stream().map(Exame::getFeedbacks)
                                             .filter(Objects::nonNull)
                                             .mapToInt(List::size)
                                             .sum();
             retornoHashmap.put(dataFormatada, feedbacks);
+            calendar.add(Calendar.MONTH, -1);
         }
         return ResponseEntity.ok(retornoHashmap);
     }
@@ -137,30 +149,22 @@ public class ExameController {
     public ResponseEntity getRightFeedbackLast12Months() {
         //TODO só puxar do banco quando feedback não nulo
         HashMap<String, Object> retornoHashmap = new HashMap<>();
-        Date data = new Date();
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM");
+        Calendar calendar = Calendar.getInstance();
+
         for (int i = 0; i < 12; i++) {
+            Date data = calendar.getTime();
             String dataFormatada = sdf.format(data);
-            List<Exame> examesMes = exameRepository.findAllByDataRegistroStartsWith(sdf.format(data));
+            List<Exame> examesMes = exameRepository.findAllByDataRegistroStartsWith(dataFormatada);
 
             int rightFeedbacks = examesMes.stream()
                     .filter(Objects::nonNull)
                     .mapToInt(Exame::countRightFeedbacks).sum();
 
             retornoHashmap.put(dataFormatada, rightFeedbacks);
+            calendar.add(Calendar.MONTH, -1);
         }
         return ResponseEntity.ok(retornoHashmap);
-    }
-
-    @GetMapping("/countDoenca")
-    public ResponseEntity getCountDoenca() {
-        List<String> doencas = new ArrayList<String>();
-        List<Exame> exames = exameRepository.getDistinctByResultado();
-//                .stream()
-//                .map(exame -> exame.getResultado())
-//                .forEach(s -> doencas.add(s));
-
-        return ResponseEntity.ok(exames);
     }
 
     @GetMapping("/countAllExames")

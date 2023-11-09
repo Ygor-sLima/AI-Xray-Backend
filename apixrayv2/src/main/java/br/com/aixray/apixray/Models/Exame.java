@@ -30,7 +30,7 @@ public class Exame {
 
     @DynamoDBAttribute(attributeName = "timestamp_inclusao")
     @DynamoDBTyped(DynamoDBMapperFieldModel.DynamoDBAttributeType.N)
-    private Integer timestampInclusao;
+    private Long timestampInclusao;
     @DynamoDBAttribute(attributeName = "data_registro")
     @DynamoDBTyped(DynamoDBMapperFieldModel.DynamoDBAttributeType.S)
     private String dataRegistro;
@@ -41,7 +41,7 @@ public class Exame {
     public Exame() {
     }
 
-    public Exame(String idExame, Integer followUp, String resultado, Paciente paciente, Imagem imagem, Integer timestampInclusao, String dataRegistro, ArrayList<Feedback> feedbacks) {
+    public Exame(String idExame, Integer followUp, String resultado, Paciente paciente, Imagem imagem, Long timestampInclusao, String dataRegistro, ArrayList<Feedback> feedbacks) {
         this.idExame = idExame;
         this.followUp = followUp;
         this.resultado = resultado;
@@ -98,11 +98,11 @@ public class Exame {
         this.imagem = imagem;
     }
 
-    public Integer getTimestampInclusao() {
+    public Long getTimestampInclusao() {
         return timestampInclusao;
     }
 
-    public void setTimestampInclusao(Integer timestampInclusao) {
+    public void setTimestampInclusao(Long timestampInclusao) {
         this.timestampInclusao = timestampInclusao;
     }
 
