@@ -13,7 +13,7 @@ import org.springframework.security.web.authentication.session.SessionAuthentica
 
 @Configuration
 @EnableWebSecurity
-public class WebSecurityConfig {
+public class WebSecurityConfig{
 
     public static final String ADMIN = "admin";
     public static final String USER = "user";
@@ -30,13 +30,14 @@ public class WebSecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http.csrf().disable();
         http.authorizeHttpRequests()
-                .requestMatchers(HttpMethod.GET, "/test/anonymous", "/test/anonymous/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/test/admin", "/test/admin/**").hasRole(ADMIN)
-                .requestMatchers(HttpMethod.POST, "/exame").hasRole(ADMIN)
-                .requestMatchers(HttpMethod.GET, "/exame").hasRole(ADMIN)
-                .requestMatchers(HttpMethod.GET, "/imagem").permitAll()
-                .requestMatchers(HttpMethod.GET, "/test/user").hasAnyRole(USER)
+//                .requestMatchers(HttpMethod.GET, "/test/anonymous", "/test/anonymous/**").permitAll()
+//                .requestMatchers(HttpMethod.GET, "/test/admin", "/test/admin/**").hasRole(ADMIN)
+//                .requestMatchers(HttpMethod.POST, "/exame").hasRole(ADMIN)
+//                .requestMatchers(HttpMethod.GET, "/exame").hasRole(ADMIN)
+//                .requestMatchers(HttpMethod.GET, "/imagem").permitAll()
+//                .requestMatchers(HttpMethod.GET, "/test/user").hasAnyRole(USER)
                 .anyRequest().permitAll();
         http.oauth2Login();
         http.oauth2ResourceServer()

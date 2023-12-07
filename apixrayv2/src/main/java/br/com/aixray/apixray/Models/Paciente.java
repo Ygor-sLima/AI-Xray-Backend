@@ -6,8 +6,8 @@ import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTyped;
 
 public class Paciente {
     @DynamoDBAttribute(attributeName = "idPaciente")
-    @DynamoDBTyped(DynamoDBMapperFieldModel.DynamoDBAttributeType.N)
-    private Integer idPaciente;
+    @DynamoDBTyped(DynamoDBMapperFieldModel.DynamoDBAttributeType.S)
+    private String idPaciente;
     @DynamoDBAttribute(attributeName = "nomePaciente")
     @DynamoDBTyped(DynamoDBMapperFieldModel.DynamoDBAttributeType.S)
     private String nomePaciente;
@@ -24,7 +24,7 @@ public class Paciente {
     public Paciente() {
     }
 
-    public Paciente(Integer idPaciente, String nomePaciente, String emailPaciente, String generoPaciente, Integer idadePaciente) {
+    public Paciente(String idPaciente, String nomePaciente, String emailPaciente, String generoPaciente, Integer idadePaciente) {
         this.idPaciente = idPaciente;
         this.nomePaciente = nomePaciente;
         this.emailPaciente = emailPaciente;
@@ -32,11 +32,11 @@ public class Paciente {
         this.idadePaciente = idadePaciente;
     }
 
-    public Integer getIdPaciente() {
+    public String getIdPaciente() {
         return idPaciente;
     }
 
-    public void setIdPaciente(Integer idPaciente) {
+    public void setIdPaciente(String idPaciente) {
         this.idPaciente = idPaciente;
     }
 

@@ -3,15 +3,22 @@ package br.com.aixray.apixray.Controllers;
 import br.com.aixray.apixray.Models.*;
 import br.com.aixray.apixray.Repositories.ExameRepository;
 import br.com.aixray.apixray.Services.S3Services;
+import br.com.aixray.apixray.Utils.CustomMultipartFile;
 import br.com.aixray.apixray.Utils.JSONStringConverterToImagem;
 import br.com.aixray.apixray.Utils.JSONStringConverterToPaciente;
-import br.com.aixray.apixray.Utils.JSONStringConverterToPacienteDTO;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.http.*;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -24,14 +31,18 @@ public class ExameController {
     ExameRepository exameRepository;
     S3Services s3Services;
 
+    RestTemplate restTemplate;
+
     public ExameController(JSONStringConverterToPaciente jsonStringConverterToPaciente,
                            JSONStringConverterToImagem jsonStringConverterToImagem,
                            S3Services s3Services,
-                           ExameRepository exameRepository) {
+                           ExameRepository exameRepository,
+                           RestTemplate restTemplate) {
         this.jsonStringConverterToPaciente = jsonStringConverterToPaciente;
         this.jsonStringConverterToImagem = jsonStringConverterToImagem;
         this.s3Services = s3Services;
         this.exameRepository = exameRepository;
+        this.restTemplate = restTemplate;
     }
 
     @GetMapping
@@ -43,16 +54,18 @@ public class ExameController {
     @PostMapping(consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
     public ResponseEntity postExame(@RequestParam Optional<MultipartFile> xray,
                                     @RequestPart String detalhesPaciente,
-                                    @RequestPart String detalhesImagem) throws IOException {
+                                    @RequestPart String followUp) throws IOException {
+        //TODO FAZER FOLLOW UP COM BASE NO PACIENTE
+
         Paciente paciente = jsonStringConverterToPaciente.convert(detalhesPaciente);
-        Imagem imagem = jsonStringConverterToImagem.convert(detalhesImagem);
-        System.out.println(imagem.toString());
+        Imagem imagem = new Imagem();
 
         Exame exame = new Exame();
         exame.setIdExame(UUID.randomUUID().toString());
         exame.setPaciente(paciente);
         exame.setResultado("");
         exame.setImagem(imagem);
+        exame.setFollowUp(Integer.parseInt(followUp));
 
         Date data = new Date();
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd");
@@ -63,9 +76,53 @@ public class ExameController {
             MultipartFile imagemXrayUpload = xray.get();
             String filename = imagemXrayUpload.getOriginalFilename();
             String name = new Date().getTime()+"."+filename.substring(filename.lastIndexOf(".")+1);
-            s3Services.uploadFile("images_exame/"+name,imagemXrayUpload);
+
             imagem.setPathImagem(name);
-            exameRepository.save(exame);
+            String url = "http://ec2-54-243-123-65.compute-1.amazonaws.com:5000/process_image";
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+
+            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+            body.add("image", new FileSystemResource(convert(imagemXrayUpload)));
+
+            HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(url, HttpMethod.POST, requestEntity, new ParameterizedTypeReference<Map<String, Object>>() {});
+
+            // Processando retorno da API
+            if (response.getStatusCode() == HttpStatus.OK) {
+                Map<String, Object> responseBody = response.getBody();
+
+                List<String> top_findings = (List<String>) responseBody.get("top_findings");
+                String resultados = "";
+                for(String finding : top_findings) {
+                    resultados += finding+"|";
+                }
+                exame.setResultado(resultados);
+
+                // Obtendo a imagem codificada em base64 do retorno
+                String base64Image = (String) responseBody.get("cam_image");
+
+                // Decodificando a imagem base64
+                byte[] imageBytes = Base64.getDecoder().decode(base64Image);
+
+                // Criando um MultipartFile personalizado
+                MultipartFile multipartFile = new CustomMultipartFile(
+                        imageBytes,
+                        "file",
+                        "filename.png",
+                        "image/png"
+                );
+
+                // Salvando as imagens no Amazon S3
+                s3Services.uploadFile("images_exame/"+name,imagemXrayUpload);
+                String imageKey = "images_exame_retorno/" + name;
+                s3Services.uploadFile(imageKey, multipartFile);
+
+                exameRepository.save(exame);
+            } else {
+                // Trate possíveis erros na resposta da API
+            }
+
             return ResponseEntity.ok(exame);
         }
 
@@ -221,5 +278,19 @@ public class ExameController {
             }
         });
         return ResponseEntity.ok(retornoHashmap);
+    }
+
+    // Método para obter a imagem como array de bytes
+    private byte[] getImageAsByteArray(MultipartFile file) throws IOException {
+        return file.getBytes();
+    }
+
+    private File convert(MultipartFile file) throws IOException {
+        File convFile = new File(file.getOriginalFilename());
+        convFile.createNewFile();
+        FileOutputStream fos = new FileOutputStream(convFile);
+        fos.write(file.getBytes());
+        fos.close();
+        return convFile;
     }
 }
